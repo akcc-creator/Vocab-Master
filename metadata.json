@@ -1,0 +1,5 @@
+{
+  "name": "Smart Vocab Master",
+  "description": "An AI-powered vocabulary practice tool for students. Generate context-aware fill-in-the-blank quizzes from your own word lists, featuring automatic tense/form adaptation and difficulty adjustments.",
+  "requestFramePermissions": []
+}
