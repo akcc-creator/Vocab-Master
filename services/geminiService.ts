@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Difficulty, Question } from "../types";
 
 // Helper to shuffle array (Fisher-Yates)
@@ -11,7 +11,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
-const responseSchema: Schema = {
+const responseSchema = {
   type: Type.ARRAY,
   items: {
     type: Type.OBJECT,
