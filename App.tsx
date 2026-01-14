@@ -13,7 +13,9 @@ enum AppStep {
 }
 
 const App: React.FC = () => {
+  // Start directly at SETUP
   const [step, setStep] = useState<AppStep>(AppStep.SETUP);
+
   const [wordsInput, setWordsInput] = useState('');
   const [difficulty, setDifficulty] = useState<Difficulty>(Difficulty.PRIMARY_UPPER);
   const [questions, setQuestions] = useState<Question[]>([]);
