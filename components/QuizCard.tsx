@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Question, AnswerState } from '../types';
+import { Question } from '../types';
 import { Button } from './Button';
 
 interface QuizCardProps {
@@ -23,8 +23,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({ question, questionIndex, tot
     setFeedback('');
     setIsHintVisible(false);
     
-    // Use a small timeout to ensure the DOM has updated (input enabled) before focusing.
-    // This fixes the issue where focus is lost after clicking the "Next" button.
+    // Use a small timeout to ensure the DOM has updated before focusing
     const timer = setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus();
@@ -43,18 +42,16 @@ export const QuizCard: React.FC<QuizCardProps> = ({ question, questionIndex, tot
     
     if (isMatch) {
       setStatus('CORRECT');
-      setFeedback('🎉 Great Job! Correct!');
-      // Play a little soft success sound or visual cue could go here
+      setFeedback('🎉 Correct! Well done!');
     } else {
       setStatus('INCORRECT');
-      setFeedback('💪 Keep trying!');
+      setFeedback('🤔 Not quite. Try again!');
     }
   };
 
   const handleFirstLetterHint = () => {
     if (question.correctForm.length > 0) {
       setInput(question.correctForm.charAt(0));
-      // Focus back to input so user can continue typing immediately
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -95,14 +92,14 @@ export const QuizCard: React.FC<QuizCardProps> = ({ question, questionIndex, tot
         </div>
 
         {/* Question Area */}
-        <div className="text-2xl md:text-3xl text-gray-800 font-bold leading-relaxed mb-8 text-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
+        <div className="text-xl md:text-3xl text-gray-800 font-bold leading-loose mb-8 text-center bg-gray-50 p-6 rounded-2xl border border-gray-100">
           <span>{question.sentenceBefore}</span>
-          <span className="inline-block min-w-[100px] border-b-4 border-indigo-300 mx-2 text-indigo-600">
-            {status === 'REVEALED' || status === 'CORRECT' ? (
-              <span className="fade-in px-2">{question.correctForm}</span>
-            ) : (
-              <span className="text-transparent">_</span>
-            )}
+          <span className={`inline-block mx-2 px-3 border-b-4 transition-all duration-300 ${
+            status === 'CORRECT' ? 'border-green-400 text-green-600' :
+            status === 'REVEALED' ? 'border-amber-400 text-amber-600' :
+            'border-indigo-300 text-transparent min-w-[80px]'
+          }`}>
+            {status === 'REVEALED' || status === 'CORRECT' ? question.correctForm : '_'}
           </span>
           <span>{question.sentenceAfter}</span>
         </div>
@@ -147,12 +144,18 @@ export const QuizCard: React.FC<QuizCardProps> = ({ question, questionIndex, tot
                  ✓
                </div>
             )}
+            {status === 'INCORRECT' && (
+               <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-red-500 text-xl animate-pulse">
+                 ✕
+               </div>
+            )}
           </div>
 
           {/* Feedback Message */}
           <div className={`h-8 text-center font-bold transition-all duration-300 ${
             status === 'CORRECT' ? 'text-green-500 scale-110' : 
             status === 'INCORRECT' ? 'text-red-500' : 
+            status === 'REVEALED' ? 'text-amber-600' :
             'text-gray-500'
           }`}>
             {feedback}
@@ -165,10 +168,10 @@ export const QuizCard: React.FC<QuizCardProps> = ({ question, questionIndex, tot
                     Submit Answer
                   </Button>
                   <Button variant="secondary" onClick={handleFirstLetterHint} className="flex-1 sm:flex-none" title="Show First Letter">
-                    🔤 1st Letter
+                    🔤 Hint
                   </Button>
-                  <Button variant="outline" onClick={handleReveal} className="flex-1 sm:flex-none" title="Parent Mode: Reveal Answer">
-                    👀 Reveal
+                  <Button variant="outline" onClick={handleReveal} className="flex-1 sm:flex-none" title="Reveal Answer">
+                    👀 Answer
                   </Button>
                 </>
              )}

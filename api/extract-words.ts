@@ -18,20 +18,19 @@ export default async function handler(request: Request) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    // WRAPPER OBJECT PATTERN: More stable than root Arrays
-    const responseSchema = {
+    const extractionSchema = {
       type: Type.OBJECT,
       properties: {
         extractedWords: {
           type: Type.ARRAY,
-          items: { type: Type.STRING }
-        }
-      }
+          items: { type: Type.STRING },
+        },
+      },
+      required: ["extractedWords"],
     };
 
-    // Switched to gemini-2.0-flash for higher RPD limits
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents: {
         parts: [
           {
@@ -41,13 +40,19 @@ export default async function handler(request: Request) {
             }
           },
           {
-            text: "Analyze this image and extract a list of educational vocabulary words found in the text. Return a JSON object with a key 'extractedWords' containing the list of strings. Ignore common stop words like 'the', 'is', 'and'. Focus on nouns, verbs, and adjectives suitable for learning."
+            text: `
+              Extract educational vocabulary words from this image.
+              1. Identify key objects, actions, or adjectives suitable for vocabulary learning.
+              2. Ignore common stop words (the, is, and, etc.).
+              3. If text appears in the image, extract relevant vocabulary from it.
+              4. Return a clean list of base form words.
+            `
           }
         ]
       },
       config: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema: extractionSchema,
       }
     });
 
