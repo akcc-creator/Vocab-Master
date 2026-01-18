@@ -18,19 +18,25 @@ export default async function handler(request: Request) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+    // WRAPPER OBJECT PATTERN: More stable than root Arrays
     const responseSchema = {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          originalWord: { type: Type.STRING, description: "The original word provided by the user." },
-          correctForm: { type: Type.STRING, description: "The grammatically correct form of the word to fit the sentence." },
-          sentenceBefore: { type: Type.STRING, description: "The part of the sentence coming BEFORE the blank." },
-          sentenceAfter: { type: Type.STRING, description: "The part of the sentence coming AFTER the blank." },
-          translation: { type: Type.STRING, description: "A brief translation or synonym hint of the word in Chinese (if English word) or English (if Chinese word)." },
-        },
-        required: ["originalWord", "correctForm", "sentenceBefore", "sentenceAfter"],
-      },
+      type: Type.OBJECT,
+      properties: {
+        quizItems: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              originalWord: { type: Type.STRING, description: "The original word provided by the user." },
+              correctForm: { type: Type.STRING, description: "The grammatically correct form of the word to fit the sentence context." },
+              sentenceBefore: { type: Type.STRING, description: "The part of the sentence coming BEFORE the blank." },
+              sentenceAfter: { type: Type.STRING, description: "The part of the sentence coming AFTER the blank." },
+              translation: { type: Type.STRING, description: "A brief translation or synonym hint of the word (Chinese for English words, English for Chinese words)." },
+            },
+            required: ["originalWord", "correctForm", "sentenceBefore", "sentenceAfter"],
+          },
+        }
+      }
     };
 
     const prompt = `
@@ -42,24 +48,24 @@ export default async function handler(request: Request) {
       Instructions:
       1. For each word in the list, create ONE sentence appropriate for the target audience level.
       2. The sentence must contain a blank where the word belongs.
-      3. CRITICAL: Modify the word form to fit the grammatical context of the sentence perfectly.
-         - Example: If word is "run" and sentence is past tense, the correct form is "ran".
-      4. **CONTEXT IS KEY**: The sentence must be descriptive enough (approx 12-25 words) so the student can logically deduce the meaning of the missing word from the context. Avoid short, ambiguous sentences.
+      3. **CRITICAL: Form Adaptation**: Modify the word form to fit the grammatical context perfectly (e.g., "run" -> "running" or "ran").
+      4. **Context Clues**: The sentence must be descriptive (12-25 words) so the student can logically deduce the answer.
          - Bad: "He is _____."
-         - Good: "Because he won the race and received a gold medal, the boy felt incredibly _____."
-      5. For Chinese words, ensure the context is natural and substantial.
-      6. Provide the sentence split into two parts: 'sentenceBefore' the blank and 'sentenceAfter' the blank.
-      7. Include a brief translation/hint.
-      8. Return strict JSON.
+         - Good: "After running the marathon in record time, the athlete felt incredibly _____ and needed to rest."
+      5. **Bilingual Support**: 
+         - If the input word is English, provide a Chinese hint/translation.
+         - If the input word is Chinese, provide an English hint/translation.
+      6. Split the sentence into 'sentenceBefore' and 'sentenceAfter' the blank.
+      7. Return a JSON object containing a 'quizItems' array.
     `;
 
+    // Switched to gemini-2.0-flash for higher RPD limits (1500/day vs 20/day for 3.0-preview)
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        thinkingConfig: { thinkingBudget: 0 }
       },
     });
 

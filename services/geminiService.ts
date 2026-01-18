@@ -21,14 +21,28 @@ export const generateQuiz = async (words: string[], difficulty: Difficulty): Pro
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to generate quiz');
+      let errorMessage = 'Failed to generate quiz';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // If response isn't JSON (e.g., 500 HTML page), use status text
+        errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const parsedData = await response.json();
+    
+    // Handle the wrapper object { quizItems: [...] }
+    const items = parsedData.quizItems || [];
+
+    if (!Array.isArray(items)) {
+      throw new Error("Invalid data format received from AI");
+    }
 
     // Map to our internal Question type and add IDs
-    const questions: Question[] = parsedData.map((item: any, index: number) => ({
+    const questions: Question[] = items.map((item: any, index: number) => ({
       id: `q-${index}-${Date.now()}`,
       originalWord: item.originalWord,
       correctForm: item.correctForm,
@@ -40,9 +54,9 @@ export const generateQuiz = async (words: string[], difficulty: Difficulty): Pro
     // Shuffle the questions so they aren't in the same order as input
     return shuffleArray(questions);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("API Error:", error);
-    throw new Error("Failed to generate quiz. Please check your words and try again.");
+    throw new Error(error.message || "Failed to generate quiz. Please check your words and try again.");
   }
 };
 
@@ -57,13 +71,27 @@ export const extractWordsFromImage = async (base64Image: string): Promise<string
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to analyze image');
+      let errorMessage = 'Failed to analyze image';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
-    return await response.json();
-  } catch (error) {
+    const parsedData = await response.json();
+    // Handle the wrapper object { extractedWords: [...] }
+    const words = parsedData.extractedWords || [];
+    
+    if (!Array.isArray(words)) {
+       throw new Error("Invalid data format received from AI");
+    }
+
+    return words;
+  } catch (error: any) {
     console.error("Image Analysis Error:", error);
-    throw new Error("Failed to extract words from image.");
+    throw new Error(error.message || "Failed to extract words from image.");
   }
 };
