@@ -20,6 +20,10 @@ export const generateQuiz = async (words: string[], difficulty: Difficulty): Pro
       body: JSON.stringify({ words, difficulty }),
     });
 
+    if (response.status === 429) {
+      throw new Error("已達到 API 使用上限 (Too Many Requests)。請休息一分鐘後再試。");
+    }
+
     if (!response.ok) {
       let errorMessage = 'Failed to generate quiz';
       try {
@@ -69,6 +73,10 @@ export const extractWordsFromImage = async (base64Image: string): Promise<string
       },
       body: JSON.stringify({ image: base64Image }),
     });
+
+    if (response.status === 429) {
+      throw new Error("已達到 API 使用上限 (Too Many Requests)。請休息一分鐘後再試。");
+    }
 
     if (!response.ok) {
       let errorMessage = 'Failed to analyze image';

@@ -65,6 +65,9 @@ export default async function handler(request: Request) {
 
   } catch (error: any) {
     console.error("Backend Image Extraction Error:", error);
-    return new Response(JSON.stringify({ error: error.message || 'Failed to extract words' }), { status: 500 });
+    // Detect rate limit errors (429) from the Google GenAI SDK
+    const isRateLimit = error.message?.includes('429') || error.status === 429;
+    const status = isRateLimit ? 429 : 500;
+    return new Response(JSON.stringify({ error: error.message || 'Failed to extract words' }), { status });
   }
 }
