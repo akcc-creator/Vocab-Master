@@ -29,9 +29,9 @@ export default async function handler(request: Request) {
       required: ["extractedWords"],
     };
 
-    // Using Gemini 2.0 Flash Lite for fast extraction
+    // Updated to Gemini 3 Flash for better OCR performance
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite-preview-02-05",
+      model: "gemini-3-flash-preview",
       contents: {
         parts: [
           {
