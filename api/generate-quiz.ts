@@ -60,8 +60,9 @@ export default async function handler(request: Request) {
       Output strictly in JSON format matching the schema.
     `;
 
+    // Using Gemini 2.0 Flash Lite - closest to Gemma class models with API support
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.0-flash-lite-preview-02-05",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
