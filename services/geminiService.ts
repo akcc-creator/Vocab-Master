@@ -1,5 +1,15 @@
 import { Difficulty, Question } from "../types";
 
+// Helper to shuffle array (Fisher-Yates)
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 interface QuizApiResponse {
   quizItems: Array<{
     originalWord: string;
@@ -48,7 +58,7 @@ export const generateQuiz = async (
       throw new Error("Invalid quiz data received from server.");
     }
 
-    return data.quizItems.map((item, index) => ({
+    const questions = data.quizItems.map((item, index) => ({
       id: `${item.originalWord}-${index}`,
       originalWord: item.originalWord,
       correctForm: item.correctForm,
@@ -56,6 +66,8 @@ export const generateQuiz = async (
       sentenceAfter: item.sentenceAfter,
       translation: item.translation
     }));
+
+    return shuffleArray(questions);
   } catch (error: any) {
     console.error("Quiz Generation Error:", error);
     throw new Error(error?.message || "Failed to generate quiz.");

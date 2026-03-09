@@ -90,7 +90,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
         <span className="inline-block min-w-[100px] border-b-4 border-dashed border-indigo-400 px-2 text-center font-bold text-indigo-700">
           {status === "REVEALED" || status === "CORRECT"
             ? question.correctForm
-            : "_____"}
+            : "\u00A0"}
         </span>{" "}
         {question.sentenceAfter}
       </div>
