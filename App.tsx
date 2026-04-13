@@ -19,6 +19,7 @@ const App: React.FC = () => {
     Difficulty.PRIMARY_UPPER
   );
   const [provideWordHint, setProvideWordHint] = useState<boolean>(false);
+  const [showWordBank, setShowWordBank] = useState<boolean>(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   >(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const hasActiveQuiz = questions.length > 0 && currentIndex < questions.length;
 
@@ -103,6 +105,50 @@ const App: React.FC = () => {
     fileInputRef.current?.click();
   };
 
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1024;
+          const MAX_HEIGHT = 1024;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(dataUrl.split(",")[1]);
+        };
+        img.onerror = (error) => reject(error);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -112,28 +158,20 @@ const App: React.FC = () => {
     setIsAnalyzing(true);
     setError(null);
 
-    const reader = new FileReader();
+    try {
+      const base64Data = await compressImage(file);
+      const words = await extractWordsFromImage(base64Data);
 
-    reader.onloadend = async () => {
-      try {
-        const base64String = reader.result as string;
-        const base64Data = base64String.split(",")[1];
-        const words = await extractWordsFromImage(base64Data);
-
-        setExtractedWords(words);
-        setSelectedExtractedWords(new Set(words));
-        setShowWordSelector(true);
-      } catch (err: any) {
-        setError(err?.message || "Failed to analyze image.");
-      } finally {
-        setIsAnalyzing(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
-      }
-    };
-
-    reader.readAsDataURL(file);
+      setExtractedWords(words);
+      setSelectedExtractedWords(new Set(words));
+      setShowWordSelector(true);
+    } catch (err: any) {
+      setError(err?.message || "Failed to analyze image.");
+    } finally {
+      setIsAnalyzing(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+    }
   };
 
   const toggleWordSelection = (word: string) => {
@@ -230,11 +268,28 @@ const App: React.FC = () => {
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button
                   variant="outline"
+                  onClick={handleCameraClick}
+                  isLoading={isAnalyzing}
+                >
+                  {isAnalyzing ? "Analyzing..." : "📷 Take Photo"}
+                </Button>
+
+                <Button
+                  variant="outline"
                   onClick={handleImageUploadClick}
                   isLoading={isAnalyzing}
                 >
-                  {isAnalyzing ? "Analyzing..." : "Scan from Image"}
+                  {isAnalyzing ? "Analyzing..." : "🖼️ Upload Image"}
                 </Button>
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
 
                 <input
                   ref={fileInputRef}
@@ -272,22 +327,41 @@ const App: React.FC = () => {
               <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-gray-700">
                 Additional Settings
               </label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-indigo-300">
-                <input
-                  type="checkbox"
-                  checked={provideWordHint}
-                  onChange={(e) => setProvideWordHint(e.target.checked)}
-                  className="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"
-                />
-                <div>
-                  <div className="font-semibold text-gray-700">
-                    Show Original Word Hint (顯示原詞提示)
+              <div className="flex flex-col gap-3">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-indigo-300">
+                  <input
+                    type="checkbox"
+                    checked={provideWordHint}
+                    onChange={(e) => setProvideWordHint(e.target.checked)}
+                    className="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-700">
+                      Show Original Word Hint (顯示原詞提示)
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      If enabled, the base word is shown next to the blank.
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    If enabled, the base word is shown next to the blank. If disabled, students must guess the word from context.
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-indigo-300">
+                  <input
+                    type="checkbox"
+                    checked={showWordBank}
+                    onChange={(e) => setShowWordBank(e.target.checked)}
+                    className="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-700">
+                      Show Word Bank (顯示生字表)
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      If enabled, all vocabulary words will be displayed at the top during the quiz.
+                    </div>
                   </div>
-                </div>
-              </label>
+                </label>
+              </div>
             </div>
 
             {error && (
@@ -316,6 +390,22 @@ const App: React.FC = () => {
         {step === AppStep.QUIZ && questions[currentIndex] && (
           <div className="space-y-6">
             <ProgressBar current={currentIndex + 1} total={questions.length} />
+            
+            {showWordBank && (
+              <div className="rounded-2xl bg-white p-4 shadow-md">
+                <div className="mb-2 text-sm font-bold uppercase tracking-wide text-indigo-600">
+                  Word Bank (生字表)
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(new Set(questions.map(q => q.originalWord))).sort().map((word) => (
+                    <span key={word} className="rounded-lg bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-800 border border-indigo-100">
+                      {word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <QuizCard
               question={questions[currentIndex]}
               questionIndex={currentIndex}
