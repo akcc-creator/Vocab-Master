@@ -55,7 +55,7 @@ app.post("/api/generate-quiz", async (req, res) => {
     };
 
     const prompt = `
-You are an expert language teacher creating a fill-in-the-blank vocabulary quiz.
+You are an expert language teacher creating a fill-in-the-blank vocabulary and grammar quiz.
 
 Target audience level: ${difficulty ?? "Upper Primary"}
 
@@ -67,8 +67,13 @@ Instructions:
 2. Detect the input language:
    - If the word is English, write the sentence in English and provide a Traditional Chinese hint.
    - If the word is Chinese, write the sentence in Chinese and provide an English hint.
-3. "correctForm" should be the exact word or the grammatically correct form required by the sentence.
-4. The sentence should be clear and natural.
+3. CRITICAL: Make the questions grammatically challenging! Do NOT just use the exact input word every time.
+   - Design sentences that FORCE the student to change the word's form based on context.
+   - For English verbs: require past tense, continuous (-ing), past participle, or third-person singular (-s).
+   - For English nouns: require plural forms.
+   - For English word families: change to adjectives/adverbs/nouns (e.g., "beauty" -> "beautiful", "quick" -> "quickly", "success" -> "succeed").
+   - The "originalWord" must be the exact word from the list, but "correctForm" MUST be the modified word that fits the blank.
+4. The sentence should provide enough context clues (like time words "yesterday", "now", or structural clues) for the student to deduce the correct form.
 5. Split the sentence into:
    - sentenceBefore = text before the blank
    - sentenceAfter = text after the blank

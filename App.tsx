@@ -18,6 +18,7 @@ const App: React.FC = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>(
     Difficulty.PRIMARY_UPPER
   );
+  const [provideWordHint, setProvideWordHint] = useState<boolean>(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
@@ -267,6 +268,28 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            <div className="mb-8">
+              <label className="mb-2 block text-sm font-bold uppercase tracking-wide text-gray-700">
+                Additional Settings
+              </label>
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-gray-200 p-4 transition-all hover:border-indigo-300">
+                <input
+                  type="checkbox"
+                  checked={provideWordHint}
+                  onChange={(e) => setProvideWordHint(e.target.checked)}
+                  className="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <div className="font-semibold text-gray-700">
+                    Show Original Word Hint (顯示原詞提示)
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    If enabled, the base word is shown next to the blank. If disabled, students must guess the word from context.
+                  </div>
+                </div>
+              </label>
+            </div>
+
             {error && (
               <div className="mb-6 rounded border-l-4 border-red-500 bg-red-100 p-4 text-red-700">
                 <p className="font-bold">Error</p>
@@ -297,6 +320,7 @@ const App: React.FC = () => {
               question={questions[currentIndex]}
               questionIndex={currentIndex}
               totalQuestions={questions.length}
+              provideWordHint={provideWordHint}
               onNext={handleNextQuestion}
             />
           </div>

@@ -6,6 +6,7 @@ interface QuizCardProps {
   question: Question;
   questionIndex: number;
   totalQuestions: number;
+  provideWordHint: boolean;
   onNext: (isCorrect: boolean) => void;
 }
 
@@ -13,6 +14,7 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   question,
   questionIndex,
   totalQuestions,
+  provideWordHint,
   onNext
 }) => {
   const [input, setInput] = useState("");
@@ -91,7 +93,12 @@ export const QuizCard: React.FC<QuizCardProps> = ({
           {status === "REVEALED" || status === "CORRECT"
             ? question.correctForm
             : "\u00A0"}
-        </span>{" "}
+        </span>
+        {provideWordHint && (
+          <span className="mx-2 text-lg font-medium text-indigo-400">
+            ({question.originalWord})
+          </span>
+        )}
         {question.sentenceAfter}
       </div>
 
